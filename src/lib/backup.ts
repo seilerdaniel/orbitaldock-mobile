@@ -1,0 +1,136 @@
+import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as DocumentPicker from 'expo-document-picker';
+import * as Sharing from 'expo-sharing';
+import { Directory, File, Paths } from 'expo-file-system';
+
+import { BackupPayload, BackupResult, Project } from '@/src/types';
+import { SEED_PROJECTS } from '@/src/data/seed';
+
+const STORAGE_KEY = 'orbitaldock.projects.v1';
+const BACKUP_FILE_NAME = 'orbitaldock-backup.json';
+
+function toBackupPayload(projects: Project[]): BackupPayload {
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    projects,
+  };
+}
+
+/** Normalizes an imported payload, falling back to the seed for malformed entries. */
+function normalizeProjects(projects: Project[]): Project[] {
+  return projects
+    .filter((p) => p && typeof p.id === 'string' && typeof p.name === 'string')
+    .map((p) => ({
+      ...p,
+      day: p.day ?? 'Lun',
+      platform: p.platform ?? 'Web',
+      category: p.category ?? 'Experimento/Utility',
+      status: p.status ?? 'desarrollo',
+      tests: p.tests ?? 'N/A',
+      description: p.description ?? '',
+      tasks: Array.isArray(p.tasks) ? p.tasks : [],
+      costs: { usd: p.costs?.usd ?? 0, ars: p.costs?.ars ?? 0 },
+    }));
+}
+
+export async function loadProjects(): Promise<Project[] | null> {
+  try {
+    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { projects?: Project[] };
+    return Array.isArray(parsed.projects) ? normalizeProjects(parsed.projects) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveProjects(projects: Project[]): Promise<void> {
+  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(toBackupPayload(projects)));
+}
+
+/** Resets local state back to the seed (useful for debugging / re-seeding). */
+export async function resetToSeed(): Promise<Project[]> {
+  const projects = SEED_PROJECTS;
+  await saveProjects(projects);
+  return projects;
+}
+
+async function downloadBlobOnWeb(blob: Blob, filename: string): Promise<void> {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
+}
+
+export async function exportBackup(projects: Project[]): Promise<BackupResult> {
+  try {
+    const payload = toBackupPayload(projects);
+    const json = JSON.stringify(payload, null, 2);
+
+    if (Platform.OS === 'web') {
+      const blob = new Blob([json], { type: 'application/json' });
+      await downloadBlobOnWeb(blob, BACKUP_FILE_NAME);
+      return { ok: true, message: `Copia de seguridad descargada como ${BACKUP_FILE_NAME}` };
+    }
+
+    const backupsDir = new Directory(Paths.document, 'backups');
+    backupsDir.create({ intermediates: true, idempotent: true });
+    const file = new File(backupsDir, BACKUP_FILE_NAME);
+    file.write(json);
+
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(file.uri, {
+        mimeType: 'application/json',
+        dialogTitle: 'OrbitalDock backup',
+        UTI: 'public.json',
+      });
+      return { ok: true, message: 'Copia de seguridad compartida desde ' + file.uri };
+    }
+
+    return { ok: true, message: `Copia guardada en ${file.uri}` };
+  } catch (error) {
+    return { ok: false, message: `Error al exportar: ${String(error)}` };
+  }
+}
+
+export async function importBackup(): Promise<BackupResult> {
+  try {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: 'application/json',
+      copyToCacheDirectory: true,
+      multiple: false,
+    });
+
+    if (result.canceled || !result.assets?.length) {
+      return { ok: false, message: 'Importación cancelada' };
+    }
+
+    const asset = result.assets[0];
+    let json = '';
+
+    if (Platform.OS === 'web' && asset.file) {
+      json = await asset.file.text();
+    } else if (asset.base64) {
+      json = atob(asset.base64);
+    } else {
+      json = await new File(asset.uri).text();
+    }
+
+    const parsed = JSON.parse(json) as BackupPayload;
+    if (!parsed || !Array.isArray(parsed.projects)) {
+      return { ok: false, message: 'El archivo no es una copia de seguridad válida de OrbitalDock' };
+    }
+
+    const projects = normalizeProjects(parsed.projects);
+    await saveProjects(projects);
+    return { ok: true, message: `Importados ${projects.length} proyectos correctamente`, projects };
+  } catch (error) {
+    return { ok: false, message: `Error al importar: ${String(error)}` };
+  }
+}
