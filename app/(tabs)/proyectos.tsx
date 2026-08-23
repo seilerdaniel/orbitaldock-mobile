@@ -5,7 +5,9 @@ import { CheckCircle2, Search } from 'lucide-react-native';
 
 import { Screen } from '@/src/components/Screen';
 import { ProjectCard } from '@/src/components/ProjectCard';
+import { PromptSheet, TandaDetailSheet } from '@/src/components/TandaSheets';
 import { useProjects } from '@/src/state/ProjectsContext';
+import { usePullToRefresh } from '@/src/lib/usePullToRefresh';
 import { buildTandaPrompt } from '@/src/lib/prompt';
 import { Project, ProjectCategory, PROJECT_CATEGORIES } from '@/src/types';
 
@@ -18,6 +20,8 @@ export default function ProyectosScreen() {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<CategoryFilter>('Todos');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [detailProject, setDetailProject] = useState<Project | null>(null);
+  const [promptProject, setPromptProject] = useState<Project | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -36,6 +40,8 @@ export default function ProyectosScreen() {
     setCopiedId(project.id);
     setTimeout(() => setCopiedId(null), 2500);
   };
+
+  const { refreshControl } = usePullToRefresh();
 
   return (
     <Screen>
@@ -91,8 +97,13 @@ export default function ProyectosScreen() {
         keyExtractor={(item) => item.id}
         contentContainerClassName="gap-3 px-4 pb-8 pt-4"
         showsVerticalScrollIndicator={false}
+        refreshControl={refreshControl}
         renderItem={({ item }) => (
-          <ProjectCard project={item} onCopyPrompt={handleCopyPrompt} />
+          <ProjectCard
+            project={item}
+            onPress={setDetailProject}
+            onCopyPrompt={handleCopyPrompt}
+          />
         )}
         ListEmptyComponent={
           <View className="mt-10 items-center rounded-2xl border border-slate-700/50 bg-slate-800 p-6">
@@ -104,13 +115,23 @@ export default function ProyectosScreen() {
       />
 
       {copiedId ? (
-        <View className="absolute bottom-6 left-6 right-6 flex-row items-center justify-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-4 py-3">
+        <View className="absolute bottom-6 left-6 right-6 z-10 flex-row items-center justify-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-4 py-3">
           <CheckCircle2 size={16} color="#34d399" />
           <Text className="text-sm font-medium text-emerald-300">
             Prompt de tanda copiado al portapapeles
           </Text>
         </View>
       ) : null}
+
+      <TandaDetailSheet
+        project={detailProject}
+        onClose={() => setDetailProject(null)}
+        onShowPrompt={(project) => {
+          setDetailProject(null);
+          setPromptProject(project);
+        }}
+      />
+      <PromptSheet project={promptProject} onClose={() => setPromptProject(null)} />
     </Screen>
   );
 }

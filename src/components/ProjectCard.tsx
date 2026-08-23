@@ -7,12 +7,19 @@ import { StatusBadge } from '@/src/components/Badge';
 interface ProjectCardProps {
   project: Project;
   showTasks?: boolean;
+  onPress?: (project: Project) => void;
   onCopyPrompt?: (project: Project) => void;
 }
 
-export function ProjectCard({ project, showTasks = false, onCopyPrompt }: ProjectCardProps) {
+export function ProjectCard({ project, showTasks = false, onPress, onCopyPrompt }: ProjectCardProps) {
   return (
-    <View className="rounded-2xl border border-slate-700/50 bg-slate-800 p-4">
+    <TouchableOpacity
+      activeOpacity={onPress ? 0.7 : 1}
+      onPress={onPress ? () => onPress(project) : undefined}
+      disabled={!onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      className="rounded-2xl border border-slate-700/50 bg-slate-800 p-4"
+    >
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1">
           <Text className="text-base font-bold text-slate-100">{project.name}</Text>
@@ -43,7 +50,7 @@ export function ProjectCard({ project, showTasks = false, onCopyPrompt }: Projec
           <Text className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Tareas pendientes ({project.tasks.length})
           </Text>
-          {project.tasks.map((task, index) => (
+          {project.tasks.map((task) => (
             <Text key={task} className="mt-1 text-sm text-slate-300">
               • {task}
             </Text>
@@ -61,6 +68,6 @@ export function ProjectCard({ project, showTasks = false, onCopyPrompt }: Projec
           <Text className="text-sm font-semibold text-indigo-300">Copiar Prompt de Tanda</Text>
         </TouchableOpacity>
       ) : null}
-    </View>
+    </TouchableOpacity>
   );
 }

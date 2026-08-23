@@ -4,8 +4,10 @@ import { FlatList, Text, View } from 'react-native';
 import { Screen } from '@/src/components/Screen';
 import { DaySelector } from '@/src/components/DaySelector';
 import { ProjectCard } from '@/src/components/ProjectCard';
+import { PromptSheet, TandaDetailSheet } from '@/src/components/TandaSheets';
 import { useProjects } from '@/src/state/ProjectsContext';
-import { WeekDay } from '@/src/types';
+import { usePullToRefresh } from '@/src/lib/usePullToRefresh';
+import { Project, WeekDay } from '@/src/types';
 
 const DAY_INDEX: Record<number, WeekDay> = {
   0: 'Dom',
@@ -20,11 +22,15 @@ const DAY_INDEX: Record<number, WeekDay> = {
 export default function AgendaScreen() {
   const { projects } = useProjects();
   const [selectedDay, setSelectedDay] = useState<WeekDay>(() => DAY_INDEX[new Date().getDay()]);
+  const [detailProject, setDetailProject] = useState<Project | null>(null);
+  const [promptProject, setPromptProject] = useState<Project | null>(null);
 
   const dayProjects = useMemo(
     () => projects.filter((project) => project.day === selectedDay),
     [projects, selectedDay],
   );
+
+  const { refreshControl } = usePullToRefresh();
 
   return (
     <Screen>
@@ -45,7 +51,14 @@ export default function AgendaScreen() {
         keyExtractor={(item) => item.id}
         contentContainerClassName="gap-3 px-4 pb-8 pt-4"
         showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => <ProjectCard project={item} />}
+        refreshControl={refreshControl}
+        renderItem={({ item }) => (
+          <ProjectCard
+            project={item}
+            onPress={setDetailProject}
+            onCopyPrompt={(project) => setPromptProject(project)}
+          />
+        )}
         ListEmptyComponent={
           <View className="mt-10 items-center rounded-2xl border border-slate-700/50 bg-slate-800 p-6">
             <Text className="text-sm text-slate-400">
@@ -54,6 +67,16 @@ export default function AgendaScreen() {
           </View>
         }
       />
+
+      <TandaDetailSheet
+        project={detailProject}
+        onClose={() => setDetailProject(null)}
+        onShowPrompt={(project) => {
+          setDetailProject(null);
+          setPromptProject(project);
+        }}
+      />
+      <PromptSheet project={promptProject} onClose={() => setPromptProject(null)} />
     </Screen>
   );
 }
