@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "codegraph": {
+      "command": "codegraph",
+      "args": ["mcp"]
+    },
+    "fetch": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-fetch"]
+    },
+    "puppeteer": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-puppeteer"]
+    },
+    "codebase-memory": {
+      "command": "npx",
+      "args": ["-y", "@deusdata/codebase-memory-mcp"]
+    }
+  }
+}
