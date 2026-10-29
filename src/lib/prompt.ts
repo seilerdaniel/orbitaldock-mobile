@@ -11,7 +11,7 @@ export function buildTandaPrompt(project: Project): string {
     `Plataforma: ${project.platform}`,
     `Día de tanda: ${project.day}`,
     `Estado: ${STATUS_LABELS[project.status]}`,
-    `Tests: ${project.tests}`,
+    `Tests (declarados a mano): ${project.tests || 'sin declarar'}`,
     '',
     `Descripción: ${project.description}`,
     '',

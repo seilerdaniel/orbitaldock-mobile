@@ -36,7 +36,9 @@ export function ProjectCard({ project, showTasks = false, onPress, onCopyPrompt 
           <Text className="text-xs text-slate-300">{project.category}</Text>
         </View>
         <View className="rounded-md border border-slate-700/50 bg-slate-900/60 px-2 py-1">
-          <Text className="text-xs text-slate-300">Tests: {project.tests}</Text>
+          <Text className="text-xs text-slate-300">
+            Declarado: {project.tests || 'sin declarar'}
+          </Text>
         </View>
         <View className="rounded-md border border-slate-700/50 bg-slate-900/60 px-2 py-1">
           <Text className="text-xs text-slate-300">Día: {project.day}</Text>

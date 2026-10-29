@@ -14,6 +14,15 @@ export const PROJECT_CATEGORIES: ProjectCategory[] = [
   'Experimento/Utility',
 ];
 
+export const PROJECT_PLATFORMS: ProjectPlatform[] = ['Web', 'Desktop', 'Mobile'];
+
+export const PROJECT_STATUSES: ProjectStatus[] = [
+  'desarrollo',
+  'produccion',
+  'pausa',
+  'mantenimiento',
+];
+
 export interface ProjectCosts {
   /** Monthly cost in USD */
   usd: number;

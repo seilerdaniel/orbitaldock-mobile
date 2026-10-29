@@ -2,6 +2,14 @@
 
 Aplicación móvil y web nativa para la gestión de proyectos, seguimiento de tandas, agenda semanal e inyector de prompts para OpenCode.
 
+## Primer arranque
+
+La app no incluye proyectos de ejemplo: arranca en un **estado vacío** con un botón destacado **Crear Proyecto**. Desde ahí (o desde el FAB `+`) podés crear proyectos; tocando una tarjeta y luego *Editar* podés modificarlos o eliminarlos, con confirmación previa. Los backups JSON se exportan e importan desde Configuración.
+
+## Datos
+
+Los proyectos se guardan en `AsyncStorage` (localStorage en web) y cada alta, edición o borrado se persiste inmediatamente. Todo dato externo —almacenamiento local o backup— pasa por `normalizeProject()`, que completa campos faltantes y descarta valores inválidos. El formato de backup es compatible con OrbitalDock Desktop.
+
 ## Live Demo (Vercel)
 
 Desplegado automáticamente a través de la integración con GitHub en Vercel.

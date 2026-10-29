@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { CheckCircle2, ClipboardCopy, FileText } from 'lucide-react-native';
+import { CheckCircle2, ClipboardCopy, FileText, Pencil } from 'lucide-react-native';
 
 import { Project } from '@/src/types';
 import { STATUS_LABELS, buildTandaPrompt } from '@/src/lib/prompt';
@@ -22,7 +22,15 @@ function Chip({ label }: { label: string }) {
 }
 
 /** Full tanda detail inside a native bottom sheet. */
-export function TandaDetailSheet({ project, onClose, onShowPrompt }: SheetBaseProps & { onShowPrompt: (project: Project) => void }) {
+export function TandaDetailSheet({
+  project,
+  onClose,
+  onShowPrompt,
+  onEdit,
+}: SheetBaseProps & {
+  onShowPrompt: (project: Project) => void;
+  onEdit: (project: Project) => void;
+}) {
   if (!project) return null;
 
   return (
@@ -41,7 +49,7 @@ export function TandaDetailSheet({ project, onClose, onShowPrompt }: SheetBasePr
         <View className="mt-3 flex-row flex-wrap items-center gap-2">
           <Chip label={project.platform} />
           <Chip label={project.category} />
-          <Chip label={`Tests: ${project.tests}`} />
+          <Chip label={`Declarado: ${project.tests || 'sin declarar'}`} />
         </View>
 
         <Text className="mt-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -67,6 +75,14 @@ export function TandaDetailSheet({ project, onClose, onShowPrompt }: SheetBasePr
       </ScrollView>
 
       <View className="mt-4 flex-row gap-3 px-5 pt-2">
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => onEdit(project)}
+          className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-indigo-400/40 bg-indigo-500/15 px-4 py-3"
+        >
+          <Pencil size={18} color="#a5b4fc" />
+          <Text className="text-sm font-semibold text-indigo-300">Editar</Text>
+        </Pressable>
         <Pressable
           accessibilityRole="button"
           onPress={() => onShowPrompt(project)}

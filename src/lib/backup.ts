@@ -5,7 +5,7 @@ import * as Sharing from 'expo-sharing';
 import { Directory, File, Paths } from 'expo-file-system';
 
 import { BackupPayload, BackupResult, Project } from '@/src/types';
-import { SEED_PROJECTS } from '@/src/data/seed';
+import { normalizeProjects } from '@/src/lib/normalize';
 
 const STORAGE_KEY = 'orbitaldock.projects.v1';
 const BACKUP_FILE_NAME = 'orbitaldock-backup.json';
@@ -16,23 +16,6 @@ function toBackupPayload(projects: Project[]): BackupPayload {
     exportedAt: new Date().toISOString(),
     projects,
   };
-}
-
-/** Normalizes an imported payload, falling back to the seed for malformed entries. */
-function normalizeProjects(projects: Project[]): Project[] {
-  return projects
-    .filter((p) => p && typeof p.id === 'string' && typeof p.name === 'string')
-    .map((p) => ({
-      ...p,
-      day: p.day ?? 'Lun',
-      platform: p.platform ?? 'Web',
-      category: p.category ?? 'Experimento/Utility',
-      status: p.status ?? 'desarrollo',
-      tests: p.tests ?? 'N/A',
-      description: p.description ?? '',
-      tasks: Array.isArray(p.tasks) ? p.tasks : [],
-      costs: { usd: p.costs?.usd ?? 0, ars: p.costs?.ars ?? 0 },
-    }));
 }
 
 export async function loadProjects(): Promise<Project[] | null> {
@@ -48,13 +31,6 @@ export async function loadProjects(): Promise<Project[] | null> {
 
 export async function saveProjects(projects: Project[]): Promise<void> {
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(toBackupPayload(projects)));
-}
-
-/** Resets local state back to the seed (useful for debugging / re-seeding). */
-export async function resetToSeed(): Promise<Project[]> {
-  const projects = SEED_PROJECTS;
-  await saveProjects(projects);
-  return projects;
 }
 
 async function downloadBlobOnWeb(blob: Blob, filename: string): Promise<void> {
